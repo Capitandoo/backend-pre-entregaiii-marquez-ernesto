@@ -10,5 +10,8 @@ export default class TicketServices extends Services {
     super (ticketManager)
   }
 
-  createTicket = async (ticket) => await ticketRepository.createTicket(ticket);
+  createTicket = async (ticket) => {
+    const newTicket = await ticketRepository.createTicket(ticket);
+    return  newTicket;
+  }
 }

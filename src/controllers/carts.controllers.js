@@ -92,7 +92,7 @@ export default class CartController extends Controllers {
   
   closeCart = async (req, res) => {
     const { cid } = req.params;
-    const { user } = req?.user || { user: { email: "m.a@gmail.com" } };
+    const { user } = req.user || { user: { email: "m.a@gmail.com" } };
     let cart = await cartService.getCart(cid);
   
     if (cart.products.length > 0) {
@@ -101,27 +101,28 @@ export default class CartController extends Controllers {
       let purchaser = user?.email || "m.a@gmail.com";
   
       cart.products.forEach(async ({product, quantity}) => {
-        console.log('cart.product', product)
-        console.log('cart.quantity',quantity)
-        console.log('product.stock',product.stock)
         if (product.stock >= quantity) {
           amount += product.price * quantity;
           product.stock -= quantity;
-          await productService.updateProduct(product.id, product);
-          
+          await productService.updateProduct(product._id, product);          
         } else {
           console.log("poco stock")
-          //productWithoutStock.push(product.id);
+          //productWithoutStock.push(product._id);
         }
       });
   
       if (amount > 0) {
-        let response = await ticketService.createTicket({ amount, purchaser });
-        if (response?.error) {
-          return res.status(400).send({ ...response });
+        console.log('amount',amount)
+        const ticketData = {
+          purchase_datetime: new Date(),
+          amount: amount,
+          purchaser: purchaser,
+        };
+        const newTicket = await ticketService.createTicket(ticketData);
+        if (newTicket) {
+          createResponse(res, 200, newTicket)
         } else {
-          let payload = await cartService.updateCart(cid, productWithoutStock);
-          return res.send({ res, payload });
+          return res.status(400).send({ newTicket });
         }
       } else {
         return res.send({ response: "No products available." });
@@ -131,3 +132,4 @@ export default class CartController extends Controllers {
     }
   };
 }
+
